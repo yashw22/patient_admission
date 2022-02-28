@@ -7,7 +7,7 @@ const Patient = mongoose.model(
         patientAge: Number,
         patientID: String,
         patientRFID: { type: String, unique: true, },
-        bedID: { type: String, default: "", },
+        bedID: { type: String, unique: true, },
         bedOccupied: { type: Boolean, default: false, },
     },
         { timestamps: true }

@@ -1,13 +1,11 @@
 const controller = require("../controllers/rfid.controller");
 
 module.exports = function (app, io) {
-    var nsp_patientRFID = io.of("/patientRFID");
-    var nsp_bedID = io.of("/bedID");
+    var nsp = io.of("/patientRFID");
 
-    app.post("/rfid/scanpatientrfid",
-        (req, res, next) => { req.nsp = nsp_patientRFID; next(); },
-        controller.scanPatientRFID);
+    app.post("/rfid/scanpatientrfid", (req, res, next) => { req.nsp = nsp; next(); }, controller.scanPatientRFID);
     app.post("/rfid/assignbedtopatient",
-        (req, res, next) => { req.nsp = nsp_bedID; next(); },
+        (req, res, next) => { req.nsp = nsp; next(); },
+        controller.checkBedAlreadyAssigned,
         controller.assignBedToPatient);
 };

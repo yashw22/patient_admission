@@ -1,21 +1,30 @@
 const db = require("../models");
 const Patient = db.patient;
 
+exports.checkBedAlreadyAssigned = (req, res, next) => {
+    Patient.find({ bedID: req.body.bedID })
+        .exec(function (err, beds) {
+            if (err) { res.status(500).send({ message: err }); return; }
+            else if (beds.length > 0) { req.nsp.emit("bedAlreadyAssigned", { message: "Trying to assign bed " + req.body.bedID + " to a patient which is already occupied." }); }
+            else next();
+        });
+}
+
 exports.assignBedToPatient = (req, res) => {
-    var fetchedBedID = req.body.bedID,
-        fetchedPatientRFID = req.body.patientRFID;
+    Patient.findOneAndUpdate({ patientRFID: req.body.patientRFID },
+        { bedID: req.body.bedID, bedOccupied: true },
+        { new: true },
+        function (err, patinet) {
+            if (err) {
+                console.log("MongoDB update err msg: " + err);
+                res.status(500).send("MongoDB update err msg: " + err);
+                return;
+            }
+            req.nsp.emit("assignBedToPatient", { patient_id: patinet._id, BedID: patinet.bedID });
+            console.log("Bed " + patinet.bedID + " assigned to Patient " + patinet.patientName);
+            res.status(200).send("Bed " + patinet.bedID + " assigned to Patient " + patinet.patientName);
 
-    Patient.updateOne({ patientRFID: fetchedPatientRFID }, { bedID: fetchedBedID }, function (err, docs) {
-        if (err) {
-            console.log("MongoDB update err msg: " + err);
-            res.send("MongoDB update err msg: " + err);
-            return;
-        }
-        req.nsp.emit("assignBedToPatient", { patientRFID: fetchedPatientRFID, BedID: fetchedBedID });
-        console.log("Bed " + fetchedBedID + " assigned to Patient " + fetchedPatientRFID);
-        res.status(200).send("Bed " + fetchedBedID + " assigned to Patient " + fetchedPatientRFID);
-
-    });
+        });
 };
 
 exports.scanPatientRFID = (req, res) => {
